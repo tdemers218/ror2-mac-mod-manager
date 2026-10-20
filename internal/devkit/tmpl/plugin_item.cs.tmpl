@@ -1,0 +1,86 @@
+using BepInEx;
+using BepInEx.Configuration;
+using BepInEx.Logging;
+using HarmonyLib;
+using R2API;
+using RoR2;
+using UnityEngine;
+using UnityEngine.AddressableAssets;
+using RoR2BepInExPack.GameAssetPathsBetter;
+
+namespace {{.Name}}
+{
+    // A new common item: each stack gives +10% movement speed.
+    // R2API registers the item with the game and handles the stat math.
+    [BepInDependency(ItemAPI.PluginGUID)]
+    [BepInDependency(LanguageAPI.PluginGUID)]
+    [BepInDependency(RecalculateStatsAPI.PluginGUID)]
+    [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
+    public class {{.Name}}Plugin : BaseUnityPlugin
+    {
+        public const string PluginGUID = "{{.GUID}}";
+        public const string PluginName = "{{.Name}}";
+        public const string PluginVersion = "{{.Version}}";
+
+        internal static ManualLogSource Log;
+        internal static ConfigEntry<float> SpeedPerStack;
+
+        private static ItemDef itemDef;
+
+        private void Awake()
+        {
+            Log = Logger;
+            SpeedPerStack = Config.Bind("Item", "SpeedPerStack", 0.10f,
+                "Movement speed per stack (0.10 = +10%).");
+
+            itemDef = ScriptableObject.CreateInstance<ItemDef>();
+            itemDef.name = "{{.Upper}}_ITEM";
+            itemDef.nameToken = "{{.Upper}}_ITEM_NAME";
+            itemDef.pickupToken = "{{.Upper}}_ITEM_PICKUP";
+            itemDef.descriptionToken = "{{.Upper}}_ITEM_DESC";
+            itemDef.loreToken = "{{.Upper}}_ITEM_LORE";
+
+            // Game assets are loaded by key. RoR2BepInExPack's GameAssetPathsBetter
+            // has a constant for every asset, so keys never need guessing.
+            // The tier lives in a non-public field, set here through Harmony.
+            ItemTierDef white = Addressables
+                .LoadAssetAsync<ItemTierDef>(RoR2_Base_Common.Tier1Def_asset).WaitForCompletion();
+            AccessTools.Field(typeof(ItemDef), "_itemTierDef").SetValue(itemDef, white);
+
+            // Placeholder art borrowed from the game. Replace with your own
+            // (an AssetBundle) once the item works.
+            itemDef.pickupIconSprite = Addressables
+                .LoadAssetAsync<Sprite>(RoR2_Base_Common_MiscIcons.texMysteryIcon_png).WaitForCompletion();
+            itemDef.pickupModelPrefab = Addressables
+                .LoadAssetAsync<GameObject>(RoR2_Base_Mystery.PickupMystery_prefab).WaitForCompletion();
+
+            itemDef.canRemove = true;
+            itemDef.hidden = false;
+            itemDef.tags = new[] { ItemTag.Utility };
+
+            ItemAPI.Add(new CustomItem(itemDef, new ItemDisplayRuleDict(null)));
+
+            LanguageAPI.Add(itemDef.nameToken, "{{.Title}}");
+            LanguageAPI.Add(itemDef.pickupToken, "Move faster.");
+            LanguageAPI.Add(itemDef.descriptionToken,
+                "Increases <style=cIsUtility>movement speed</style> by <style=cIsUtility>10%</style> <style=cStack>(+10% per stack)</style>.");
+            LanguageAPI.Add(itemDef.loreToken, "{{.Description}}");
+
+            RecalculateStatsAPI.GetStatCoefficients += (body, args) =>
+            {
+                if (body.inventory == null)
+                {
+                    return;
+                }
+                // "Effective" counts respect temporary and disabled items.
+                int count = body.inventory.GetItemCountEffective(itemDef);
+                if (count > 0)
+                {
+                    args.moveSpeedMultAdd += SpeedPerStack.Value * count;
+                }
+            };
+
+            Log.LogInfo($"{PluginName} {PluginVersion} loaded");
+        }
+    }
+}

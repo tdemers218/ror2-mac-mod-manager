@@ -1,0 +1,41 @@
+# {{.Name}}
+
+A Risk of Rain 2 mod (BepInEx plugin, C#) by {{.Author}}.
+
+**Goal:** {{.Description}}
+
+Started from the "{{.TemplateLabel}}" template.
+
+## How to work here
+
+Skills in `{{.SkillsDir}}/` explain everything specific to this setup. Read the
+relevant one before acting:
+
+- `ror2-mod-workflow`: build, install into the game, launch, read logs. Read first.
+- `ror2-game-code`: look up the game's real classes and assets instead of guessing.
+- `ror2-content-recipes`: items, buffs, stats, equipment, settings with R2API.
+- `ror2-thunderstore-release`: versioning and packaging for Thunderstore.
+
+## Commands
+
+```sh
+ror2 dev build        # compile (fix all errors)
+ror2 dev deploy       # build + install into the game as a dev mod
+ror2 dev log          # this mod's log lines and errors from the last launch
+ror2 dev decompile RoR2.CharacterBody   # read game code
+ror2 launch           # start the game (ask the person first)
+ror2 dev package      # Thunderstore zip in build/
+```
+
+## Ground rules
+
+- The game runs through Wine on macOS; there is no debugger. Test by deploying,
+  launching and reading `ror2 dev log`.
+- Verify game APIs with `ror2 dev decompile` before using them. Many members were
+  renamed or obsoleted in recent game updates.
+- Gameplay changes only when `NetworkServer.active` (host).
+- Keep the version identical in `Plugin.cs`, `{{.Name}}.csproj` and `manifest.json`.
+- Never edit files inside the game folder directly; use `ror2 dev deploy`.
+- Commit to git after each working step.
+- The person may not be a programmer: explain what you changed and how to try it
+  in plain language, and say what they should see in-game.

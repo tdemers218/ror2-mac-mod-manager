@@ -1,0 +1,28 @@
+using BepInEx;
+using BepInEx.Configuration;
+using BepInEx.Logging;
+
+namespace {{.Name}}
+{
+    // BepInEx finds this class, creates it once at game start and calls Awake.
+    [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
+    public class {{.Name}}Plugin : BaseUnityPlugin
+    {
+        public const string PluginGUID = "{{.GUID}}";
+        public const string PluginName = "{{.Name}}";
+        public const string PluginVersion = "{{.Version}}";
+
+        internal static ManualLogSource Log;
+
+        // Settings players can change in BepInEx/config/{{.GUID}}.cfg
+        internal static ConfigEntry<bool> Enabled;
+
+        private void Awake()
+        {
+            Log = Logger;
+            Enabled = Config.Bind("General", "Enabled", true, "Turn the mod on or off.");
+
+            Log.LogInfo($"{PluginName} {PluginVersion} loaded");
+        }
+    }
+}

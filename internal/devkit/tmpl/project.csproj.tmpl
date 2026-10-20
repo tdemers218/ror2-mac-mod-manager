@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    {{.Name}}: a BepInEx plugin for Risk of Rain 2.
+    It compiles against the game and BepInEx files in your install, so it always
+    matches your game version. `ror2 dev build` passes the current GameDir.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>{{.Name}}</AssemblyName>
+    <RootNamespace>{{.Name}}</RootNamespace>
+    <Version>{{.Version}}</Version>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DebugType>portable</DebugType>
+    <!-- Unity's assemblies target an older framework; these warnings are expected. -->
+    <NoWarn>$(NoWarn);MSB3277;CS0618</NoWarn>
+
+    <GameDir Condition="'$(GameDir)' == ''">{{.GameDir}}</GameDir>
+    <Managed>$(GameDir)/Risk of Rain 2_Data/Managed</Managed>
+    <BepInExDir>$(GameDir)/BepInEx</BepInExDir>
+  </PropertyGroup>
+
+  <!-- Game and loader assemblies are provided at runtime: never copy them. -->
+  <ItemDefinitionGroup>
+    <Reference>
+      <Private>false</Private>
+    </Reference>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <Reference Include="$(BepInExDir)/core/BepInEx.dll" />
+    <Reference Include="$(BepInExDir)/core/0Harmony.dll" />
+    <Reference Include="$(BepInExDir)/core/MonoMod.RuntimeDetour.dll" />
+    <Reference Include="$(BepInExDir)/core/MonoMod.Utils.dll" />
+    <Reference Include="$(BepInExDir)/core/Mono.Cecil.dll" />
+    <Reference Include="$(BepInExDir)/plugins/**/MMHOOK_RoR2.dll" />
+    <Reference Include="$(BepInExDir)/plugins/**/RoR2BepInExPack.dll" />
+{{- range .Managed}}
+    <Reference Include="$(Managed)/{{.}}.dll" Condition="Exists('$(Managed)/{{.}}.dll')" />
+{{- end}}
+{{- range .Refs}}
+    <Reference Include="$(BepInExDir)/plugins/**/{{.}}.dll" />
+{{- end}}
+  </ItemGroup>
+
+</Project>
