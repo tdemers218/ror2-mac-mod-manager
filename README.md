@@ -32,7 +32,7 @@ No r2modman needed.
 ## Install
 
 ```sh
-git clone https://github.com/<you>/ror2-mac-mod-manager.git
+git clone https://github.com/tdemers218/ror2-mac-mod-manager.git
 cd ror2-mac-mod-manager
 make install          # builds and copies the app to ~/.local/bin/ror2
 ```
