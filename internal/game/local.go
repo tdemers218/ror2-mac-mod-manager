@@ -31,6 +31,7 @@ type Local struct {
 	DLLs        []string // DLL names (without .dll)
 	Manifest    *Manifest
 	FileVersion string // version from the main DLL's file properties
+	Parked      bool   // switched off: its files are in .ror2mm/disabled-local
 }
 
 // Generated or loader-owned folders that are never mods.

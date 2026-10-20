@@ -92,7 +92,7 @@ func (m *Model) snap() snapshot {
 
 func isDialog(md mode) bool {
 	switch md {
-	case mConfirm, mHelp, mView, mNewMod, mBusy, mReadme:
+	case mConfirm, mHelp, mView, mNewMod, mBusy, mReadme, mPrompt:
 		return true
 	}
 	return false

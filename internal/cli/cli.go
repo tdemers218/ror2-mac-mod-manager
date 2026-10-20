@@ -51,7 +51,7 @@ func parse(argv []string) (flags, error) {
 			f.offline = true
 		case a == "--all" || a == "-a":
 			f.all = true
-		case a == "--configs":
+		case a == "--configs" || a == "--settings":
 			f.configs = true
 		case a == "--reinstall":
 			f.reinstall = true
@@ -195,6 +195,8 @@ func Run(argv []string, tuiFn func(a *core.App, search, tab string) error) int {
 		return cmdRestore(a, f)
 	case "dev", "create", "make":
 		return cmdDev(ctx, a, f)
+	case "pack", "packs", "modpack":
+		return cmdPack(ctx, a, f)
 	default:
 		errorf("unknown command " + ui.Bold.Render(cmd))
 		note("Run `ror2 help` to see commands.")
@@ -218,6 +220,9 @@ func usage() {
 	line("ror2 update [mod…]", "update one, some or all tracked mods")
 	line("ror2 remove <mod>…", "uninstall (configs are kept)")
 	line("ror2 enable|disable <mod>…", "turn mods on or off without deleting")
+	line("ror2 pack [list]", "mod packs: saved sets of mods, plus the built-in Vanilla")
+	line("ror2 pack save <name>", "save the mods that are on now  (--configs keeps their settings)")
+	line("ror2 pack load <name>", "switch to a pack (Vanilla = play with no mods)")
 	line("ror2 list", "what is installed")
 	fmt.Println()
 	section("Health")
@@ -687,7 +692,18 @@ func cmdEnable(ctx context.Context, a *core.App, f flags, on bool) int {
 	var names []string
 	for _, e := range es {
 		if !e.Managed {
-			warnf(e.Name + " was installed by hand; run `ror2 adopt` first so it can be switched on and off.")
+			if e.Local == nil {
+				continue
+			}
+			if err := a.SetLocalEnabled([]*core.Entry{e}, on); err != nil {
+				errorf(err.Error())
+				return 1
+			}
+			if on {
+				success(ui.Bold.Render(e.Name) + " is on")
+			} else {
+				out("  %s %s is off", ui.Dim.Render(ui.GOff), ui.Bold.Render(e.Name))
+			}
 			continue
 		}
 		names = append(names, e.FullName)
@@ -698,7 +714,8 @@ func cmdEnable(ctx context.Context, a *core.App, f flags, on bool) int {
 		}
 	}
 	if len(names) == 0 {
-		return 1
+		fmt.Println()
+		return 0
 	}
 	if err := a.SetEnabled(names, on); err != nil {
 		errorf(err.Error())

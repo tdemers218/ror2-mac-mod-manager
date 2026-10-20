@@ -333,6 +333,21 @@ func (a *App) SetEnabled(fullNames []string, on bool) error {
 	return nil
 }
 
+// SetLocalEnabled turns hand-installed (and dev) mods on or off by moving
+// their files aside.
+func (a *App) SetLocalEnabled(entries []*Entry, on bool) error {
+	defer a.Refresh()
+	for _, e := range entries {
+		if e.Local == nil {
+			continue
+		}
+		if err := a.Game.SetLocalEnabled(*e.Local, on); err != nil {
+			return fmt.Errorf("%s: %w", e.Name, err)
+		}
+	}
+	return nil
+}
+
 // Orphans lists tracked packages installed only as dependencies that nothing needs now.
 func (a *App) Orphans() []*Entry {
 	var out []*Entry

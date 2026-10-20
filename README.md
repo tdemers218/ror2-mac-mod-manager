@@ -50,6 +50,7 @@ ror2 update          update every tracked mod
 ror2 doctor --fix    fix missing or too-old dependencies and load errors
 ror2 adopt           start tracking mods that were installed by hand
 ror2 import <code>   install an r2modman profile (code or .r2z file)
+ror2 pack load <name>  switch to a saved mod pack (Vanilla = no mods)
 ror2 launch          start the game through Steam in the wrapper
 ror2 dev             make your own mods with Claude Code or Codex
 ror2 help            everything else
@@ -68,8 +69,8 @@ ror2 help            everything else
 
 ## The app
 
-`ror2` opens a full-screen app with five tabs: **Browse**, **Installed**, **Doctor**,
-**Create** and **Settings**. Mouse and keyboard both work (`?` lists keys).
+`ror2` opens a full-screen app with six tabs: **Browse**, **Installed**, **Doctor**,
+**Packs**, **Create** and **Settings**. Mouse and keyboard both work (`?` lists keys).
 Settings has 13 themes (five inspired by Risk of Rain 2), border styles (including
 dotted and braille-dot frames), dotted accents, icon size, image mode, list options,
 confirmations, catalog refresh and backups. Everything saves to the config file instantly.
@@ -89,6 +90,18 @@ libraries, deprecated, NSFW, already-installed and year-old mods, and show only 
 any set of categories. Installed can hide disabled, hand-installed or up-to-date mods,
 hide or isolate whole sections, or switch to one flat list. `s` / `S` change the first
 sort level and flip its direction without opening the panel; `r` in the panel resets.
+
+## Mod packs (Packs tab / `ror2 pack`)
+
+Save the mods that are on right now as a named pack, and load it later to get exactly
+that setup back. Loading switches mods on and off to match (hand-installed and dev mods
+too) and downloads any pack mod you removed since, at the saved version. A pack can also
+keep a copy of every mod's settings, put back when it's loaded. A backup is taken first.
+
+The built-in **Vanilla** pack plays the plain game: it turns the mod loader off without
+moving any files, so loading another pack afterwards is instant. The top bar shows a
+**VANILLA** badge while it's on. `ror2 pack save <name> [--configs]`, `ror2 pack load
+<name>`, `ror2 pack rename` and `ror2 pack delete` do the same from the command line.
 
 ## Making mods (Create tab / `ror2 dev`)
 

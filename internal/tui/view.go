@@ -60,6 +60,8 @@ func (m *Model) View() string {
 		body = m.place(w, h, m.viewPanelView())
 	case mNewMod:
 		body = m.place(w, h, m.wizardView())
+	case mPrompt:
+		body = m.place(w, h, m.promptView())
 	case mReadme:
 		body = m.readmeView()
 	default:
@@ -156,6 +158,16 @@ func (m *Model) headerView() string {
 	left += strings.Join(tabs, " ")
 
 	var right []string
+	if p, ok := m.app.ActivePack(); p != nil {
+		switch {
+		case p.Vanilla && ok:
+			right = append(right, m.mark("tab:2#pack", ui.Pill("VANILLA · no mods", ui.Boss)))
+		case ok:
+			right = append(right, m.mark("tab:2#pack", ui.Dim.Render("❖ "+p.Name)))
+		default:
+			right = append(right, m.mark("tab:2#pack", ui.Dim.Render("❖ "+p.Name+"*")))
+		}
+	}
 	if m.gameRunning {
 		right = append(right, ui.OK.Render(ui.GOn+" game running"))
 	} else if m.launching != "" {
@@ -196,6 +208,8 @@ func (m *Model) headerView() string {
 		}
 	case tabCreate:
 		line2 = " " + m.createSubheader()
+	case tabPacks:
+		line2 = " " + ui.Dim.Render("Saved sets of mods. Load one to switch everything over in one go; Vanilla plays with no mods.")
 	case tabSettings:
 		line2 = " " + ui.Dim.Render("Changes apply instantly and are saved to ") + ui.Fainter.Render(config.ShortPath(config.Dir()+"/config.json"))
 	}
@@ -285,6 +299,9 @@ func (m *Model) bodyView() string {
 	case tabCreate:
 		title, rows = m.createRows(iw, listH)
 		detail, dtitle = m.createDetail(dw), "Project"
+	case tabPacks:
+		title, rows = m.packsRows(iw, listH)
+		detail, dtitle = m.packsDetail(dw), "Pack"
 	case tabSettings:
 		title, rows = m.settingsRows(iw, listH)
 		detail, dtitle = m.settingsDetail(dw), "Preview"
@@ -943,7 +960,7 @@ func (m *Model) helpView() string {
 	line := func(key, d string) string { return "  " + k.Render(key) + ui.Dim.Render(d) }
 	body := strings.Join([]string{
 		sec("Everywhere"),
-		line("1-5 / tab", "switch tabs   , settings"),
+		line("1-6 / tab", "switch tabs   , settings"),
 		line("↑↓ j k", "move   pgup/pgdn  g/G  top/bottom"),
 		line("enter", "README"),
 		line("L", "launch Risk of Rain 2"),
@@ -964,6 +981,11 @@ func (m *Model) helpView() string {
 		line("f", "sort & filter: hide disabled, sections, flat list…"),
 		line("u  U", "update this · update all"),
 		line("a  x", "adopt hand-installed · remove"),
+		"",
+		sec("Packs"),
+		line("enter", "load a pack (Vanilla = no mods)"),
+		line("n  s", "save the mods that are on as a new pack · into this pack"),
+		line("r  x", "rename · delete a pack"),
 		"",
 		sec("Create"),
 		line("n / enter", "new mod · open project in your AI agent"),
@@ -1035,6 +1057,8 @@ func (m *Model) footerView() string {
 				left = " " + m.hints("space", "on/off", "u", "update", "U", "update all", "a", "adopt", "x", "remove", "f", "sort & filter", "?", "help")
 			case tabDoctor:
 				left = " " + m.hints("f", "fix", "F", "fix all", "r", "re-read log", "L", "launch", "?", "help")
+			case tabPacks:
+				left = " " + m.hints("enter", "load", "n", "new pack", "s", "save into", "r", "rename", "x", "delete", "L", "launch", "?", "help")
 			case tabCreate:
 				left = " " + m.createFooter()
 			case tabSettings:

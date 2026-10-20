@@ -71,7 +71,10 @@ func (a *App) Doctor() []*Issue {
 			add(&Issue{Sev: SevError, Title: "winhttp.dll is missing from the game folder",
 				Detail: "This is BepInEx's doorstop; without it the game starts without mods."})
 		}
-		if !b.DoorstopOn {
+		if !b.DoorstopOn && strings.EqualFold(a.Cfg.Get("active_pack", ""), VanillaPack) {
+			add(&Issue{Sev: SevInfo, Title: "Vanilla pack is on: the game starts without mods",
+				Detail: "Load another pack in the Packs tab (or ror2 pack load <name>) to play with mods again. Your mods are untouched."})
+		} else if !b.DoorstopOn {
 			add(&Issue{Sev: SevWarn, Title: "Doorstop is turned off",
 				Detail: "doorstop_config.ini has enabled = false, so BepInEx will not start."})
 		}

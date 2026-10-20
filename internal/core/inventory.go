@@ -134,9 +134,9 @@ func BuildInventory(cat *ts.Catalog, g *game.Game, log *game.Log) *Inventory {
 		inv.Entries = append(inv.Entries, e)
 		inv.byFull[strings.ToLower(p.FullName)] = e
 	}
-	for _, l := range g.ScanLocal() {
+	for _, l := range append(g.ScanLocal(), g.ScanParkedLocal()...) {
 		l := l
-		e := &Entry{Name: l.Name, Local: &l, Enabled: true, DLLs: l.DLLs}
+		e := &Entry{Name: l.Name, Local: &l, Enabled: !l.Parked, DLLs: l.DLLs}
 		identify(e, cat, log)
 		inv.Entries = append(inv.Entries, e)
 		if e.FullName != "" {

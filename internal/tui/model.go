@@ -30,14 +30,15 @@ type tab int
 const (
 	tabBrowse tab = iota
 	tabInstalled
+	tabPacks
 	tabDoctor
 	tabCreate
 	tabSettings
 	numTabs
 )
 
-var tabNames = []string{"Browse", "Installed", "Doctor", "Create", "Settings"}
-var tabIcons = []string{"⌕", "▤", "✚", "✦", "⚙"}
+var tabNames = []string{"Browse", "Installed", "Packs", "Doctor", "Create", "Settings"}
+var tabIcons = []string{"⌕", "▤", "❖", "✚", "✦", "⚙"}
 
 type mode int
 
@@ -50,6 +51,7 @@ const (
 	mHelp
 	mView
 	mNewMod
+	mPrompt
 )
 
 type toastKind int
@@ -124,7 +126,8 @@ type Model struct {
 	readmeRefs    []termimg.Ref
 	readmeBody    string
 
-	vw *viewPanel
+	vw     *viewPanel
+	prompt *promptBox
 
 	toast     string
 	toastKind toastKind
@@ -477,6 +480,8 @@ func (m *Model) listLen(t tab) int {
 		return len(m.settings())
 	case tabCreate:
 		return m.createLen()
+	case tabPacks:
+		return m.packsLen()
 	default:
 		return len(m.issues)
 	}
@@ -730,7 +735,7 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		// Fast typing or a held key can arrive as several runes at once.
 		// Outside the search box, treat each one as its own key press.
-		if msg.Type == tea.KeyRunes && len(msg.Runes) > 1 && !msg.Paste && m.mode != mSearch && m.mode != mNewMod {
+		if msg.Type == tea.KeyRunes && len(msg.Runes) > 1 && !msg.Paste && m.mode != mSearch && m.mode != mNewMod && m.mode != mPrompt {
 			var cmds []tea.Cmd
 			for _, r := range msg.Runes {
 				cmds = append(cmds, m.onKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}}))
@@ -861,7 +866,7 @@ func (m *Model) onClick(msg tea.MouseMsg) tea.Cmd {
 	case strings.HasPrefix(id, "tab:"):
 		fmt.Sscanf(id, "tab:%d", &n)
 		switch m.mode {
-		case mConfirm, mView, mBusy, mNewMod:
+		case mConfirm, mView, mBusy, mNewMod, mPrompt:
 			return nil // finish the dialog first
 		case mSearch:
 			m.search.Blur()
@@ -906,7 +911,7 @@ func (m *Model) onClick(msg tea.MouseMsg) tea.Cmd {
 			switch m.tab {
 			case tabDoctor:
 				return m.onKey(keyFor("f"))
-			case tabCreate:
+			case tabCreate, tabPacks:
 				return m.onKey(keyFor("enter"))
 			}
 			return m.actReadme()
@@ -935,6 +940,8 @@ func (m *Model) onKey(msg tea.KeyMsg) tea.Cmd {
 		return nil
 	case mNewMod:
 		return m.wizardKey(msg)
+	case mPrompt:
+		return m.promptKey(msg)
 	case mHelp:
 		m.mode = mNormal
 		return nil
@@ -1008,6 +1015,11 @@ func (m *Model) onKey(msg tea.KeyMsg) tea.Cmd {
 			return cmd
 		}
 	}
+	if m.tab == tabPacks {
+		if cmd, handled := m.packsKey(key); handled {
+			return cmd
+		}
+	}
 	switch key {
 	case "q":
 		return tea.Quit
@@ -1017,7 +1029,7 @@ func (m *Model) onKey(msg tea.KeyMsg) tea.Cmd {
 		m.tab = (m.tab + 1) % numTabs
 	case "shift+tab", "left", "h":
 		m.tab = (m.tab + numTabs - 1) % numTabs
-	case "1", "2", "3", "4", "5":
+	case "1", "2", "3", "4", "5", "6":
 		m.tab = tab(key[0] - '1')
 		if m.tab == tabCreate {
 			m.reloadProjects()
@@ -1369,11 +1381,14 @@ func (m *Model) actToggle() tea.Cmd {
 	if e == nil {
 		return nil
 	}
-	if !e.Managed {
-		return m.showToast(toastInfo, "Adopt "+e.Name+" first (a) so it can be switched on and off.")
-	}
 	on := !e.Enabled
-	if err := m.app.SetEnabled([]string{e.FullName}, on); err != nil {
+	var err error
+	if e.Managed {
+		err = m.app.SetEnabled([]string{e.FullName}, on)
+	} else {
+		err = m.app.SetLocalEnabled([]*core.Entry{e}, on)
+	}
+	if err != nil {
 		return m.showToast(toastErr, err.Error())
 	}
 	m.diskStamp = m.app.DiskStamp()
